@@ -1,9 +1,9 @@
 {
-  "name": "everyman/neo4jphp",
+  "name": "mschnider/neo4jphp",
   "type": "library",
   "description": "Wrapper for the Neo4j graph database REST interface",
   "keywords": ["neo4j","graph","database"],
-  "homepage": "http://github.com/jadell/neo4jphp/wiki",
+  "homepage": "http://github.com/mschnider/neo4jphp/wiki",
   "license": "MIT",
   "authors": [
     {"name": "Josh Adell", "email": "josh.adell@gmail.com", "homepage": "http://joshadell.com"}
