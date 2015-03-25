@@ -48,6 +48,9 @@ class CreateRelationship extends Command
 				$opData = array_merge($opData, $reserved->getCommand()->getData());
 			}
 			$start = "{{$startId}}/relationships";
+            if ($this->rel->isUnique()) {
+                $start .= '?uniqueness=' . $this->rel->getUniqueAction();
+            }
 		} else {
 			$start = $this->base->getPath();
 		}

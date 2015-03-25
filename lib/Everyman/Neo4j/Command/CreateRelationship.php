@@ -4,8 +4,7 @@ namespace Everyman\Neo4j\Command;
 use Everyman\Neo4j\Command,
 	Everyman\Neo4j\Client,
 	Everyman\Neo4j\Exception,
-	Everyman\Neo4j\Relationship,
-	Everyman\Neo4j\Node;
+	Everyman\Neo4j\Relationship;
 
 /**
  * Create a relationship
@@ -33,6 +32,7 @@ class CreateRelationship extends Command
 	 */
 	protected function getData()
 	{
+        $start = $this->rel->getStartNode();
 		$end = $this->rel->getEndNode();
 		$type = $this->rel->getType();
 		if (!$end || !$end->hasId()) {
@@ -41,16 +41,22 @@ class CreateRelationship extends Command
 			throw new Exception('No relationship type specified');
 		}
 
-		$endUri = $this->getTransport()->getEndpoint().'/node/'.$end->getId();
-		$data = array(
-			'type' => $type,
-			'to'   => $endUri,
-		);
+        $startUri = $this->getTransport()->getEndpoint().'/node/'.$start->getId();
+        $endUri = $this->getTransport()->getEndpoint().'/node/'.$end->getId();
+        $data = array('type' => $type);
+        if ($this->rel->getUniqueKey() != null) {
+            $data['key'] = $this->rel->getUniqueKey();
+            $data['value'] = $this->rel->getUniqueValue();
+            $data['start'] = $startUri;
+            $data['end'] = $endUri;
+        } else {
+            $data['to'] = $endUri;
+        }
 
-		$properties = $this->rel->getProperties();
-		if ($properties) {
-			$data['data'] = $properties;
-		}
+        $properties = $this->rel->getProperties();
+        if ($properties) {
+            $data['data'] = $properties;
+        }
 
 		return $data;
 	}
@@ -76,7 +82,14 @@ class CreateRelationship extends Command
 		if (!$start || !$start->hasId()) {
 			throw new Exception('No relationship start node specified');
 		}
-		return '/node/'.$start->getId().'/relationships';
+        $path = '/node/'.$start->getId().'/relationships';
+
+        if ($this->rel->isUnique()) {
+            $path = '/index/relationship/'.$this->rel->getType();
+            $path .= '?uniqueness=' . $this->rel->getUniqueAction();
+        }
+
+        return $path;
 	}
 
 	/**
@@ -94,7 +107,13 @@ class CreateRelationship extends Command
 			$this->throwException('Unable to create relationship', $code, $headers, $data);
 		}
 
-		$relId = $this->getEntityMapper()->getIdFromUri($headers['Location']);
+        //$uri = '';
+        if (isset($headers['Location'])) {
+            $uri = $headers['Location'];
+        } else {
+            $uri = $data['body']['self'];
+        }
+        $relId = $this->getEntityMapper()->getIdFromUri($uri);
 		$this->rel->setId($relId);
 		$this->getEntityCache()->setCachedEntity($this->rel);
 		return true;
